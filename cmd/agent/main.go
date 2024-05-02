@@ -37,15 +37,17 @@ func main() {
 			for _, endpoint := range endpoints {
 				request, err := http.NewRequest(http.MethodPost, endpoint, nil)
 				if err != nil {
-					panic(err)
+					fmt.Println(err)
+					break
 				}
 				request.Header.Add("Content-Type", "text/plain")
 				response, err := client.Do(request)
 				if err != nil {
-					panic(err)
+					fmt.Println(err)
+					break
 				}
 				// выводим код ответа
-				fmt.Println("Статус-код ", response.Status)
+				//fmt.Println("Статус-код ", response.Status)
 				defer response.Body.Close()
 			}
 		}
