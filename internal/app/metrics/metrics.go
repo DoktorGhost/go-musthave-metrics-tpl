@@ -1,8 +1,11 @@
 package metrics
 
 import (
+	"fmt"
 	"math/rand"
+	"net/http"
 	"runtime"
+	"strconv"
 )
 
 type Metrics struct {
@@ -23,41 +26,62 @@ func (m *Metrics) CollectMetrics() {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	gauge := m.Guage
 	m.Counter++
 
 	randomValue = rand.Float64() * 100
-	gauge["RandomValue"] = randomValue
-	gauge["Alloc"] = float64(memStats.Alloc)
-	gauge["BuckHashSys"] = float64(memStats.BuckHashSys)
-	gauge["Frees"] = float64(memStats.Frees)
-	gauge["GCCPUFraction"] = float64(memStats.GCCPUFraction)
-	gauge["GCSys"] = float64(memStats.GCSys)
-	gauge["HeapAlloc"] = float64(memStats.HeapAlloc)
-	gauge["HeapIdle"] = float64(memStats.HeapIdle)
-	gauge["HeapInuse"] = float64(memStats.HeapInuse)
-	gauge["HeapObjects"] = float64(memStats.HeapObjects)
-	gauge["HeapReleased"] = float64(memStats.HeapReleased)
-	gauge["HeapSys"] = float64(memStats.HeapSys)
-	gauge["LastGC"] = float64(memStats.LastGC)
-	gauge["Lookups"] = float64(memStats.Lookups)
-	gauge["MCacheInuse"] = float64(memStats.MCacheInuse)
-	gauge["MCacheSys"] = float64(memStats.MCacheSys)
-	gauge["MSpanInuse"] = float64(memStats.MSpanInuse)
-	gauge["MSpanSys"] = float64(memStats.MSpanSys)
-	gauge["Mallocs"] = float64(memStats.Mallocs)
-	gauge["NextGC"] = float64(memStats.NextGC)
-	gauge["NumForcedGC"] = float64(memStats.NumForcedGC)
-	gauge["NumGC"] = float64(memStats.NumGC)
-	gauge["OtherSys"] = float64(memStats.OtherSys)
-	gauge["PauseTotalNs"] = float64(memStats.PauseTotalNs)
-	gauge["StackInuse"] = float64(memStats.StackInuse)
-	gauge["StackSys"] = float64(memStats.StackSys)
-	gauge["Sys"] = float64(memStats.Sys)
-	gauge["TotalAlloc"] = float64(memStats.TotalAlloc)
+
+	m.Guage["RandomValue"] = randomValue
+	m.Guage["Alloc"] = float64(memStats.Alloc)
+	m.Guage["BuckHashSys"] = float64(memStats.BuckHashSys)
+	m.Guage["Frees"] = float64(memStats.Frees)
+	m.Guage["GCCPUFraction"] = float64(memStats.GCCPUFraction)
+	m.Guage["GCSys"] = float64(memStats.GCSys)
+	m.Guage["HeapAlloc"] = float64(memStats.HeapAlloc)
+	m.Guage["HeapIdle"] = float64(memStats.HeapIdle)
+	m.Guage["HeapInuse"] = float64(memStats.HeapInuse)
+	m.Guage["HeapObjects"] = float64(memStats.HeapObjects)
+	m.Guage["HeapReleased"] = float64(memStats.HeapReleased)
+	m.Guage["HeapSys"] = float64(memStats.HeapSys)
+	m.Guage["LastGC"] = float64(memStats.LastGC)
+	m.Guage["Lookups"] = float64(memStats.Lookups)
+	m.Guage["MCacheInuse"] = float64(memStats.MCacheInuse)
+	m.Guage["MCacheSys"] = float64(memStats.MCacheSys)
+	m.Guage["MSpanInuse"] = float64(memStats.MSpanInuse)
+	m.Guage["MSpanSys"] = float64(memStats.MSpanSys)
+	m.Guage["Mallocs"] = float64(memStats.Mallocs)
+	m.Guage["NextGC"] = float64(memStats.NextGC)
+	m.Guage["NumForcedGC"] = float64(memStats.NumForcedGC)
+	m.Guage["NumGC"] = float64(memStats.NumGC)
+	m.Guage["OtherSys"] = float64(memStats.OtherSys)
+	m.Guage["PauseTotalNs"] = float64(memStats.PauseTotalNs)
+	m.Guage["StackInuse"] = float64(memStats.StackInuse)
+	m.Guage["StackSys"] = float64(memStats.StackSys)
+	m.Guage["Sys"] = float64(memStats.Sys)
+	m.Guage["TotalAlloc"] = float64(memStats.TotalAlloc)
 
 }
 
-func (m *Metrics) UpdateMetrics() {
+func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 
+	var endpoints []string
+	endpoints = append(endpoints, serverAddress+"update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
+	for key, value := range m.Guage {
+		endpoint := serverAddress + "update/guage/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+		endpoints = append(endpoints, endpoint)
+	}
+	for _, endpoint := range endpoints {
+		request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		request.Header.Add("Content-Type", "text/plain")
+		response, err := client.Do(request)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		defer response.Body.Close()
+	}
 }

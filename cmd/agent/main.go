@@ -11,6 +11,7 @@ import (
 
 func main() {
 	client := &http.Client{}
+	host := "http://localhost:8080/"
 
 	m := metrics.NewMetrics()
 	var wg sync.WaitGroup
@@ -28,10 +29,11 @@ func main() {
 		defer wg.Done()
 		for {
 			time.Sleep(10 * time.Second)
+			//m.UpdateMetrics(client, host)
 			var endpoints []string
-			endpoints = append(endpoints, "http://localhost:8080/update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
+			endpoints = append(endpoints, host+"update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
 			for key, value := range m.Guage {
-				endpoint := "http://localhost:8080/update/guage/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+				endpoint := host + "update/guage/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
 				endpoints = append(endpoints, endpoint)
 			}
 			for _, endpoint := range endpoints {
@@ -46,8 +48,7 @@ func main() {
 					fmt.Println(err)
 					break
 				}
-				// выводим код ответа
-				//fmt.Println("Статус-код ", response.Status)
+
 				defer response.Body.Close()
 			}
 		}
