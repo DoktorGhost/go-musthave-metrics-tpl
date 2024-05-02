@@ -27,7 +27,6 @@ func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.UsecaseMemStorage) {
 	if req.Method != http.MethodPost {
 		res.WriteHeader(http.StatusMethodNotAllowed)
-		res.Write([]byte("неправильный метод"))
 		return
 	}
 
@@ -37,12 +36,10 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 
 	if nameMetric == "" {
 		res.WriteHeader(http.StatusNotFound)
-		res.Write([]byte("nameMetric is nill"))
 		return
 	}
 	if typeMetric == "" || valueMetric == "" {
 		res.WriteHeader(http.StatusBadRequest)
-		res.Write([]byte("typeMetric or valueMetric is nill"))
 		return
 	}
 	if typeMetric == "gauge" {
@@ -66,7 +63,6 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 		res.WriteHeader(http.StatusOK)
 		return
 	} else {
-		res.Write([]byte("ошибка в самом конце"))
 		res.WriteHeader(http.StatusBadRequest)
 	}
 }
