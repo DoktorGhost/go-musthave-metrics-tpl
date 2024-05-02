@@ -30,11 +30,6 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 		return
 	}
 
-	if req.Header.Get("Content-Type") != "text/plain" {
-		res.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	typeMetric := chi.URLParam(req, "type")
 	nameMetric := chi.URLParam(req, "name")
 	valueMetric := chi.URLParam(req, "value")
