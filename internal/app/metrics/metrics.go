@@ -9,13 +9,13 @@ import (
 )
 
 type Metrics struct {
-	Guage   map[string]float64
+	Gauge   map[string]float64
 	Counter int64
 }
 
 func NewMetrics() *Metrics {
 	return &Metrics{
-		Guage:   make(map[string]float64),
+		Gauge:   make(map[string]float64),
 		Counter: int64(0),
 	}
 }
@@ -30,34 +30,34 @@ func (m *Metrics) CollectMetrics() {
 
 	randomValue = rand.Float64() * 100
 
-	m.Guage["RandomValue"] = randomValue
-	m.Guage["Alloc"] = float64(memStats.Alloc)
-	m.Guage["BuckHashSys"] = float64(memStats.BuckHashSys)
-	m.Guage["Frees"] = float64(memStats.Frees)
-	m.Guage["GCCPUFraction"] = float64(memStats.GCCPUFraction)
-	m.Guage["GCSys"] = float64(memStats.GCSys)
-	m.Guage["HeapAlloc"] = float64(memStats.HeapAlloc)
-	m.Guage["HeapIdle"] = float64(memStats.HeapIdle)
-	m.Guage["HeapInuse"] = float64(memStats.HeapInuse)
-	m.Guage["HeapObjects"] = float64(memStats.HeapObjects)
-	m.Guage["HeapReleased"] = float64(memStats.HeapReleased)
-	m.Guage["HeapSys"] = float64(memStats.HeapSys)
-	m.Guage["LastGC"] = float64(memStats.LastGC)
-	m.Guage["Lookups"] = float64(memStats.Lookups)
-	m.Guage["MCacheInuse"] = float64(memStats.MCacheInuse)
-	m.Guage["MCacheSys"] = float64(memStats.MCacheSys)
-	m.Guage["MSpanInuse"] = float64(memStats.MSpanInuse)
-	m.Guage["MSpanSys"] = float64(memStats.MSpanSys)
-	m.Guage["Mallocs"] = float64(memStats.Mallocs)
-	m.Guage["NextGC"] = float64(memStats.NextGC)
-	m.Guage["NumForcedGC"] = float64(memStats.NumForcedGC)
-	m.Guage["NumGC"] = float64(memStats.NumGC)
-	m.Guage["OtherSys"] = float64(memStats.OtherSys)
-	m.Guage["PauseTotalNs"] = float64(memStats.PauseTotalNs)
-	m.Guage["StackInuse"] = float64(memStats.StackInuse)
-	m.Guage["StackSys"] = float64(memStats.StackSys)
-	m.Guage["Sys"] = float64(memStats.Sys)
-	m.Guage["TotalAlloc"] = float64(memStats.TotalAlloc)
+	m.Gauge["RandomValue"] = randomValue
+	m.Gauge["Alloc"] = float64(memStats.Alloc)
+	m.Gauge["BuckHashSys"] = float64(memStats.BuckHashSys)
+	m.Gauge["Frees"] = float64(memStats.Frees)
+	m.Gauge["GCCPUFraction"] = float64(memStats.GCCPUFraction)
+	m.Gauge["GCSys"] = float64(memStats.GCSys)
+	m.Gauge["HeapAlloc"] = float64(memStats.HeapAlloc)
+	m.Gauge["HeapIdle"] = float64(memStats.HeapIdle)
+	m.Gauge["HeapInuse"] = float64(memStats.HeapInuse)
+	m.Gauge["HeapObjects"] = float64(memStats.HeapObjects)
+	m.Gauge["HeapReleased"] = float64(memStats.HeapReleased)
+	m.Gauge["HeapSys"] = float64(memStats.HeapSys)
+	m.Gauge["LastGC"] = float64(memStats.LastGC)
+	m.Gauge["Lookups"] = float64(memStats.Lookups)
+	m.Gauge["MCacheInuse"] = float64(memStats.MCacheInuse)
+	m.Gauge["MCacheSys"] = float64(memStats.MCacheSys)
+	m.Gauge["MSpanInuse"] = float64(memStats.MSpanInuse)
+	m.Gauge["MSpanSys"] = float64(memStats.MSpanSys)
+	m.Gauge["Mallocs"] = float64(memStats.Mallocs)
+	m.Gauge["NextGC"] = float64(memStats.NextGC)
+	m.Gauge["NumForcedGC"] = float64(memStats.NumForcedGC)
+	m.Gauge["NumGC"] = float64(memStats.NumGC)
+	m.Gauge["OtherSys"] = float64(memStats.OtherSys)
+	m.Gauge["PauseTotalNs"] = float64(memStats.PauseTotalNs)
+	m.Gauge["StackInuse"] = float64(memStats.StackInuse)
+	m.Gauge["StackSys"] = float64(memStats.StackSys)
+	m.Gauge["Sys"] = float64(memStats.Sys)
+	m.Gauge["TotalAlloc"] = float64(memStats.TotalAlloc)
 
 }
 
@@ -65,8 +65,8 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 
 	var endpoints []string
 	endpoints = append(endpoints, serverAddress+"update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
-	for key, value := range m.Guage {
-		endpoint := serverAddress + "update/guage/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+	for key, value := range m.Gauge {
+		endpoint := serverAddress + "update/gauge/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
 		endpoints = append(endpoints, endpoint)
 	}
 	for _, endpoint := range endpoints {
