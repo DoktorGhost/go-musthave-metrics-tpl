@@ -23,12 +23,18 @@ func HandlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 		return
 	}
 
+	if req.Header.Get("Content-Type") != "text/plain" {
+		res.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	typeMetric := chi.URLParam(req, "type")
 	nameMetric := chi.URLParam(req, "name")
 	valueMetric := chi.URLParam(req, "value")
 
 	if nameMetric == "" {
 		res.WriteHeader(http.StatusNotFound)
+		return
 	}
 	if typeMetric == "" || valueMetric == "" {
 		res.WriteHeader(http.StatusBadRequest)
@@ -51,7 +57,9 @@ func HandlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 			return
 		}
 		useCase.UsecaseUpdateCounter(nameMetric, valueInt)
+		res.WriteHeader(http.StatusOK)
+		return
+	} else {
+		res.WriteHeader(http.StatusBadRequest)
 	}
-	res.WriteHeader(http.StatusOK)
-
 }
