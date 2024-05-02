@@ -45,8 +45,7 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 	if typeMetric == "guage" {
 		valueFloat, err := strconv.ParseFloat(valueMetric, 64)
 		if err != nil {
-			fmt.Println("Ошибка конвертации значения")
-			res.WriteHeader(http.StatusInternalServerError)
+			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		useCase.UsecaseUpdateGuage(nameMetric, valueFloat)
@@ -54,8 +53,7 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 	} else if typeMetric == "counter" {
 		valueInt, err := strconv.ParseInt(valueMetric, 10, 64)
 		if err != nil {
-			fmt.Println("Ошибка конвертации значения")
-			res.WriteHeader(http.StatusInternalServerError)
+			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		useCase.UsecaseUpdateCounter(nameMetric, valueInt)
