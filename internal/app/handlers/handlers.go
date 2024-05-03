@@ -85,10 +85,14 @@ func handlerGet(res http.ResponseWriter, req *http.Request, useCase usecase.Usec
 	}
 
 	value := useCase.UsecaseRead(typeMetric, nameMetric)
-	stringValue := fmt.Sprintf("%v", value)
-	res.Header().Set("Content-Type", "text/plain")
-	res.WriteHeader(http.StatusOK)
-	res.Write([]byte(stringValue))
+	if value == nil {
+		stringValue := fmt.Sprintf("%v", value)
+		res.Header().Set("Content-Type", "text/plain")
+		res.WriteHeader(http.StatusOK)
+		res.Write([]byte(stringValue))
+	} else {
+		res.WriteHeader(http.StatusNotFound)
+	}
 
 }
 

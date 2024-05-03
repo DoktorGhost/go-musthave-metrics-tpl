@@ -38,9 +38,17 @@ func (ms *MemStorage) Read(nameType, nameMetric string) interface{} {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 	if nameType == "gauge" {
-		return ms.gauge[nameMetric]
+		if key, ok := ms.gauge[nameMetric]; ok {
+			return key
+		} else {
+			return nil
+		}
 	} else if nameType == "counter" {
-		return ms.counter[nameMetric]
+		if key, ok := ms.counter[nameMetric]; ok {
+			return key
+		} else {
+			return nil
+		}
 	}
 	return nil
 }
