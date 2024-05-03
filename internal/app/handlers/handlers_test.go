@@ -1,7 +1,6 @@
-package tests
+package handlers
 
 import (
-	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/handlers"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/storage/maps"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +40,7 @@ func TestRoute(t *testing.T) {
 	storage := usecase.NewUsecaseMemStorage(db)
 
 	//добавим в бд тестовую запись
-	ts := httptest.NewServer(handlers.InitRoutes(*storage))
+	ts := httptest.NewServer(InitRoutes(*storage))
 	defer ts.Close()
 
 	type values struct {
