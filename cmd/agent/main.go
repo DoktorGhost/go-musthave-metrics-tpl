@@ -1,15 +1,19 @@
 package main
 
 import (
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/config"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/metrics"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
 
 func main() {
 	client := &http.Client{}
-	host := "http://localhost:8080/"
+	addr, ReportInterval, PollInterval := config.ParseConfigClient()
+
+	host := "http://" + addr.Host + ":" + strconv.Itoa(addr.Port) + "/"
 
 	m := metrics.NewMetrics()
 	var wg sync.WaitGroup
@@ -19,14 +23,14 @@ func main() {
 		defer wg.Done()
 		for {
 			m.CollectMetrics()
-			time.Sleep(2 * time.Second)
+			time.Sleep(time.Duration(PollInterval) * time.Second)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		for {
-			time.Sleep(10 * time.Second)
+			time.Sleep(time.Duration(ReportInterval) * time.Second)
 			m.UpdateMetrics(client, host)
 		}
 	}()
