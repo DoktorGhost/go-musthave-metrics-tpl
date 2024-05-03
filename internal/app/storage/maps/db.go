@@ -27,7 +27,7 @@ func (ms *MemStorage) UpdateCounter(nameMetric string, value int64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	_, ok := ms.counter[nameMetric]
-	if !ok {
+	if ok {
 		ms.counter[nameMetric] += value
 	} else {
 		ms.counter[nameMetric] = value
