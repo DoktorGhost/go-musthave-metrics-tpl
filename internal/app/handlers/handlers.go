@@ -49,7 +49,7 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 			res.Write([]byte("ошибка конвертации"))
 			return
 		}
-		useCase.UsecaseUpdateGuage(nameMetric, valueFloat)
+		useCase.UsecaseUpdateGauge(nameMetric, valueFloat)
 		res.WriteHeader(http.StatusOK)
 	} else if typeMetric == "counter" {
 		valueInt, err := strconv.ParseInt(valueMetric, 10, 64)
@@ -85,7 +85,7 @@ func handlerGet(res http.ResponseWriter, req *http.Request, useCase usecase.Usec
 	}
 
 	value := useCase.UsecaseRead(typeMetric, nameMetric)
-	if value == nil {
+	if value != nil {
 		stringValue := fmt.Sprintf("%v", value)
 		res.Header().Set("Content-Type", "text/plain")
 		res.WriteHeader(http.StatusOK)

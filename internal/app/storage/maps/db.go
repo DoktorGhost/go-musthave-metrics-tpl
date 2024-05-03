@@ -17,7 +17,7 @@ func NewMapStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) UpdateGauage(nameMetric string, value float64) {
+func (ms *MemStorage) UpdateGauge(nameMetric string, value float64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.gauge[nameMetric] = value
