@@ -17,7 +17,7 @@ func NewMapStorage() *MemStorage {
 	}
 }
 
-func (ms *MemStorage) UpdateGauage(nameMetric string, value float64) {
+func (ms *MemStorage) UpdateGauge(nameMetric string, value float64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.gauge[nameMetric] = value
@@ -27,7 +27,7 @@ func (ms *MemStorage) UpdateCounter(nameMetric string, value int64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	_, ok := ms.counter[nameMetric]
-	if !ok {
+	if ok {
 		ms.counter[nameMetric] += value
 	} else {
 		ms.counter[nameMetric] = value
@@ -38,9 +38,17 @@ func (ms *MemStorage) Read(nameType, nameMetric string) interface{} {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
 	if nameType == "gauge" {
-		return ms.gauge[nameMetric]
+		if key, ok := ms.gauge[nameMetric]; ok {
+			return key
+		} else {
+			return nil
+		}
 	} else if nameType == "counter" {
-		return ms.counter[nameMetric]
+		if key, ok := ms.counter[nameMetric]; ok {
+			return key
+		} else {
+			return nil
+		}
 	}
 	return nil
 }

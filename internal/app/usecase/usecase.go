@@ -10,8 +10,8 @@ func NewUsecaseMemStorage(storage storage.RepositoryDB) *UsecaseMemStorage {
 	return &UsecaseMemStorage{storage: storage}
 }
 
-func (uc *UsecaseMemStorage) UsecaseUpdateGuage(nameMetric string, value float64) {
-	uc.storage.UpdateGauage(nameMetric, value)
+func (uc *UsecaseMemStorage) UsecaseUpdateGauge(nameMetric string, value float64) {
+	uc.storage.UpdateGauge(nameMetric, value)
 }
 
 func (uc *UsecaseMemStorage) UsecaseUpdateCounter(nameMetric string, value int64) {

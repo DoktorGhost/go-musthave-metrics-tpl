@@ -41,6 +41,7 @@ func TestRoute(t *testing.T) {
 
 	//добавим в бд тестовую запись
 	ts := httptest.NewServer(InitRoutes(*storage))
+	storage.UsecaseUpdateGauge("Allock", 100)
 	defer ts.Close()
 
 	type values struct {
@@ -181,7 +182,7 @@ func TestRoute(t *testing.T) {
 		{
 			name: "Test #13 handlerGet",
 			values: values{
-				url:    "/value/counter/Allock",
+				url:    "/value/gauge/Allock",
 				method: "GET",
 			},
 			want: want{
