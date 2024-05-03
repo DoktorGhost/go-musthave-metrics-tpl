@@ -54,7 +54,6 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 	} else if typeMetric == "counter" {
 		valueInt, err := strconv.ParseInt(valueMetric, 10, 64)
 		if err != nil {
-
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write([]byte("ошибка конвертации"))
 			return
@@ -130,4 +129,6 @@ func handlerAllMetrics(res http.ResponseWriter, req *http.Request, useCase useca
 		http.Error(res, "Ошибка отображения HTML-страницы", http.StatusInternalServerError)
 		return
 	}
+	res.WriteHeader(http.StatusOK)
+
 }

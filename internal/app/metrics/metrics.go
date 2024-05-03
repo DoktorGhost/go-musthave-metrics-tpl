@@ -1,18 +1,21 @@
 package metrics
 
 import (
+	"fmt"
 	"math/rand"
+	"net/http"
 	"runtime"
+	"strconv"
 )
 
 type Metrics struct {
-	Guage   map[string]float64
+	Gauge   map[string]float64
 	Counter int64
 }
 
 func NewMetrics() *Metrics {
 	return &Metrics{
-		Guage:   make(map[string]float64),
+		Gauge:   make(map[string]float64),
 		Counter: int64(0),
 	}
 }
@@ -23,41 +26,62 @@ func (m *Metrics) CollectMetrics() {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	gauge := m.Guage
 	m.Counter++
 
 	randomValue = rand.Float64() * 100
-	gauge["RandomValue"] = randomValue
-	gauge["Alloc"] = float64(memStats.Alloc)
-	gauge["BuckHashSys"] = float64(memStats.BuckHashSys)
-	gauge["Frees"] = float64(memStats.Frees)
-	gauge["GCCPUFraction"] = float64(memStats.GCCPUFraction)
-	gauge["GCSys"] = float64(memStats.GCSys)
-	gauge["HeapAlloc"] = float64(memStats.HeapAlloc)
-	gauge["HeapIdle"] = float64(memStats.HeapIdle)
-	gauge["HeapInuse"] = float64(memStats.HeapInuse)
-	gauge["HeapObjects"] = float64(memStats.HeapObjects)
-	gauge["HeapReleased"] = float64(memStats.HeapReleased)
-	gauge["HeapSys"] = float64(memStats.HeapSys)
-	gauge["LastGC"] = float64(memStats.LastGC)
-	gauge["Lookups"] = float64(memStats.Lookups)
-	gauge["MCacheInuse"] = float64(memStats.MCacheInuse)
-	gauge["MCacheSys"] = float64(memStats.MCacheSys)
-	gauge["MSpanInuse"] = float64(memStats.MSpanInuse)
-	gauge["MSpanSys"] = float64(memStats.MSpanSys)
-	gauge["Mallocs"] = float64(memStats.Mallocs)
-	gauge["NextGC"] = float64(memStats.NextGC)
-	gauge["NumForcedGC"] = float64(memStats.NumForcedGC)
-	gauge["NumGC"] = float64(memStats.NumGC)
-	gauge["OtherSys"] = float64(memStats.OtherSys)
-	gauge["PauseTotalNs"] = float64(memStats.PauseTotalNs)
-	gauge["StackInuse"] = float64(memStats.StackInuse)
-	gauge["StackSys"] = float64(memStats.StackSys)
-	gauge["Sys"] = float64(memStats.Sys)
-	gauge["TotalAlloc"] = float64(memStats.TotalAlloc)
+
+	m.Gauge["RandomValue"] = randomValue
+	m.Gauge["Alloc"] = float64(memStats.Alloc)
+	m.Gauge["BuckHashSys"] = float64(memStats.BuckHashSys)
+	m.Gauge["Frees"] = float64(memStats.Frees)
+	m.Gauge["GCCPUFraction"] = float64(memStats.GCCPUFraction)
+	m.Gauge["GCSys"] = float64(memStats.GCSys)
+	m.Gauge["HeapAlloc"] = float64(memStats.HeapAlloc)
+	m.Gauge["HeapIdle"] = float64(memStats.HeapIdle)
+	m.Gauge["HeapInuse"] = float64(memStats.HeapInuse)
+	m.Gauge["HeapObjects"] = float64(memStats.HeapObjects)
+	m.Gauge["HeapReleased"] = float64(memStats.HeapReleased)
+	m.Gauge["HeapSys"] = float64(memStats.HeapSys)
+	m.Gauge["LastGC"] = float64(memStats.LastGC)
+	m.Gauge["Lookups"] = float64(memStats.Lookups)
+	m.Gauge["MCacheInuse"] = float64(memStats.MCacheInuse)
+	m.Gauge["MCacheSys"] = float64(memStats.MCacheSys)
+	m.Gauge["MSpanInuse"] = float64(memStats.MSpanInuse)
+	m.Gauge["MSpanSys"] = float64(memStats.MSpanSys)
+	m.Gauge["Mallocs"] = float64(memStats.Mallocs)
+	m.Gauge["NextGC"] = float64(memStats.NextGC)
+	m.Gauge["NumForcedGC"] = float64(memStats.NumForcedGC)
+	m.Gauge["NumGC"] = float64(memStats.NumGC)
+	m.Gauge["OtherSys"] = float64(memStats.OtherSys)
+	m.Gauge["PauseTotalNs"] = float64(memStats.PauseTotalNs)
+	m.Gauge["StackInuse"] = float64(memStats.StackInuse)
+	m.Gauge["StackSys"] = float64(memStats.StackSys)
+	m.Gauge["Sys"] = float64(memStats.Sys)
+	m.Gauge["TotalAlloc"] = float64(memStats.TotalAlloc)
 
 }
 
-func (m *Metrics) UpdateMetrics() {
+func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 
+	var endpoints []string
+	endpoints = append(endpoints, serverAddress+"update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
+	for key, value := range m.Gauge {
+		endpoint := serverAddress + "update/gauge/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+		endpoints = append(endpoints, endpoint)
+	}
+	for _, endpoint := range endpoints {
+		request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		request.Header.Add("Content-Type", "text/plain")
+		response, err := client.Do(request)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		defer response.Body.Close()
+	}
 }
