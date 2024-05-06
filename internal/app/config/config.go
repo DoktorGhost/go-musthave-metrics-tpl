@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"github.com/caarlos0/env/v6"
 	"strconv"
 	"strings"
 )
@@ -10,6 +11,12 @@ import (
 type Config struct {
 	Host string
 	Port int
+}
+
+type HostPort struct {
+	Hp             []string `env:"ADDRESS" envSeparator:":"`
+	ReportInterval int      `env:"REPORT_INTERVAL"`
+	PollInterval   int      `env:"POLL_INTERVAL"`
 }
 
 var ReportInterval int
@@ -35,34 +42,63 @@ func (c *Config) Set(value string) error {
 }
 
 func ParseConfigServer() *Config {
+	var cfg HostPort
+	env.Parse(&cfg)
 	addr := new(Config)
-	_ = flag.Value(addr)
-	flag.Var(addr, "a", "Net address host:port")
-	flag.Parse()
+	if len(cfg.Hp) == 0 {
+		_ = flag.Value(addr)
+		flag.Var(addr, "a", "Net address host:port")
+		flag.Parse()
+		if addr.Host == "" {
+			addr.Host = "localhost"
+		}
+		if addr.Port == 0 {
+			addr.Port = 8080
+		}
+	} else {
+		addr.Host = cfg.Hp[0]
+		port, err := strconv.Atoi(cfg.Hp[1])
+		if err != nil {
+			return nil
+		}
+		addr.Port = port
+	}
 
-	if addr.Host == "" {
-		addr.Host = "localhost"
-	}
-	if addr.Port == 0 {
-		addr.Port = 8080
-	}
 	return addr
 }
 
 func ParseConfigClient() (*Config, int, int) {
+	var cfg HostPort
+	env.Parse(&cfg)
 	addr := new(Config)
-	_ = flag.Value(addr)
-	flag.Var(addr, "a", "Net address host:port")
 
-	flag.IntVar(&ReportInterval, "r", 10, "частоту отправки метрик на сервер")
-	flag.IntVar(&PollInterval, "p", 2, "частоту опроса метрик из пакета runtime")
-	flag.Parse()
-
-	if addr.Host == "" {
-		addr.Host = "localhost"
+	if len(cfg.Hp) == 0 {
+		_ = flag.Value(addr)
+		flag.Var(addr, "a", "Net address host:port")
+		flag.IntVar(&ReportInterval, "r", 10, "частоту отправки метрик на сервер")
+		flag.IntVar(&PollInterval, "p", 2, "частоту опроса метрик из пакета runtime")
+		flag.Parse()
+		if addr.Host == "" {
+			addr.Host = "localhost"
+		}
+		if addr.Port == 0 {
+			addr.Port = 8080
+		}
+	} else {
+		addr.Host = cfg.Hp[0]
+		port, err := strconv.Atoi(cfg.Hp[1])
+		if err != nil {
+			return nil, 0, 0
+		}
+		addr.Port = port
 	}
-	if addr.Port == 0 {
-		addr.Port = 8080
+
+	if cfg.ReportInterval != 0 {
+		ReportInterval = cfg.ReportInterval
+	}
+
+	if cfg.PollInterval != 0 {
+		PollInterval = cfg.PollInterval
 	}
 
 	return addr, ReportInterval, PollInterval
