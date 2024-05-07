@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"github.com/go-chi/chi/v5"
 	"html/template"
@@ -11,6 +12,8 @@ import (
 
 func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(logger.WithLogging)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		handlerAllMetrics(w, r, useCase)
