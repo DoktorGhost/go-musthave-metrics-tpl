@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/storage/maps"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -38,6 +40,15 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 func TestRoute(t *testing.T) {
 	db := maps.NewMapStorage()
 	storage := usecase.NewUsecaseMemStorage(db)
+
+	logg, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	defer logg.Sync()
+	logger.InitLogger(logg)
+	sugar := *logg.Sugar()
+	sugar.Infow("server started")
 
 	//добавим в бд тестовую запись
 	ts := httptest.NewServer(InitRoutes(*storage))
