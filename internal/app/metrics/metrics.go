@@ -1,11 +1,13 @@
 package metrics
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"math/rand"
 	"net/http"
 	"runtime"
-	"strconv"
 )
 
 type Metrics struct {
@@ -63,19 +65,34 @@ func (m *Metrics) CollectMetrics() {
 
 func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 
-	var endpoints []string
-	endpoints = append(endpoints, serverAddress+"update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
+	var bodys []models.Metrics
+	bodys = append(bodys, models.Metrics{
+		ID:    "PollCount",
+		MType: "counter",
+		Delta: &m.Counter,
+	})
 	for key, value := range m.Gauge {
-		endpoint := serverAddress + "update/gauge/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
-		endpoints = append(endpoints, endpoint)
+		bodys = append(bodys, models.Metrics{
+			ID:    key,
+			MType: "gauge",
+			Value: &value,
+		})
 	}
-	for _, endpoint := range endpoints {
-		request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+
+	for _, body := range bodys {
+		jsonBody, err := json.Marshal(body)
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
-		request.Header.Add("Content-Type", "text/plain")
+		reader := bytes.NewReader(jsonBody)
+
+		request, err := http.NewRequest(http.MethodPost, serverAddress+"update", reader)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		request.Header.Add("Content-Type", "application/json")
 		response, err := client.Do(request)
 		if err != nil {
 			fmt.Println(err)
@@ -85,3 +102,30 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 		defer response.Body.Close()
 	}
 }
+
+/*
+func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
+
+		var endpoints []string
+		endpoints = append(endpoints, serverAddress+"update/counter/PollCount/"+strconv.FormatInt(m.Counter, 10))
+		for key, value := range m.Gauge {
+			endpoint := serverAddress + "update/gauge/" + key + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+			endpoints = append(endpoints, endpoint)
+		}
+		for _, endpoint := range endpoints {
+			request, err := http.NewRequest(http.MethodPost, endpoint, nil)
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+			request.Header.Add("Content-Type", "text/plain")
+			response, err := client.Do(request)
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+
+			defer response.Body.Close()
+		}
+	}
+*/

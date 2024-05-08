@@ -170,7 +170,7 @@ func handlerJSONPost(w http.ResponseWriter, r *http.Request, useCase usecase.Use
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	/////////////////////////
+
 	if req.MType == "gauge" {
 		useCase.UsecaseUpdateGauge(req.ID, *req.Value)
 		key := useCase.UsecaseRead(req.MType, req.ID)
@@ -178,7 +178,7 @@ func handlerJSONPost(w http.ResponseWriter, r *http.Request, useCase usecase.Use
 	} else if req.MType == "counter" {
 		useCase.UsecaseUpdateCounter(req.ID, *req.Delta)
 		key := useCase.UsecaseRead(req.MType, req.ID)
-		*req.Delta = key.(int64)
+		*req.Delta += key.(int64)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}
