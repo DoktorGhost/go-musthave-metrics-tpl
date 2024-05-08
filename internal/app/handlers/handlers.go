@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"github.com/go-chi/chi/v5"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -20,6 +23,9 @@ func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 	})
 	r.Post("/update/{type}/{name}/{value}", func(w http.ResponseWriter, r *http.Request) {
 		handlerPost(w, r, useCase)
+	})
+	r.Post("/update", func(w http.ResponseWriter, r *http.Request) {
+		handlerJSONPost(w, r, useCase)
 	})
 	r.Get("/value/{type}/{name}", func(w http.ResponseWriter, r *http.Request) {
 		handlerGet(w, r, useCase)
@@ -138,4 +144,51 @@ func handlerAllMetrics(res http.ResponseWriter, req *http.Request, useCase useca
 	}
 	res.WriteHeader(http.StatusOK)
 
+}
+
+func handlerJSONPost(w http.ResponseWriter, r *http.Request, useCase usecase.UsecaseMemStorage) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req models.Metrics
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		log.Println("ошибка декодирования JSON")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	if req.ID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if req.MType == "" && (req.Value == nil || req.Delta == nil || *req.Value == 0 || *req.Delta == 0) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	/////////////////////////
+	if req.MType == "gauge" {
+		useCase.UsecaseUpdateGauge(req.ID, *req.Value)
+		key := useCase.UsecaseRead(req.MType, req.ID)
+		*req.Value = key.(float64)
+	} else if req.MType == "counter" {
+		useCase.UsecaseUpdateCounter(req.ID, *req.Delta)
+		key := useCase.UsecaseRead(req.MType, req.ID)
+		*req.Delta = key.(int64)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(req); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
