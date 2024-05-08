@@ -25,10 +25,13 @@ func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 		handlerPost(w, r, useCase)
 	})
 	r.Post("/update", func(w http.ResponseWriter, r *http.Request) {
-		handlerJSONPost(w, r, useCase)
+		handlerJSONUpdate(w, r, useCase)
 	})
 	r.Get("/value/{type}/{name}", func(w http.ResponseWriter, r *http.Request) {
 		handlerGet(w, r, useCase)
+	})
+	r.Post("/value", func(w http.ResponseWriter, r *http.Request) {
+		handlerJSONValue(w, r, useCase)
 	})
 	return r
 }
@@ -146,7 +149,7 @@ func handlerAllMetrics(res http.ResponseWriter, req *http.Request, useCase useca
 
 }
 
-func handlerJSONPost(w http.ResponseWriter, r *http.Request, useCase usecase.UsecaseMemStorage) {
+func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.UsecaseMemStorage) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -181,6 +184,55 @@ func handlerJSONPost(w http.ResponseWriter, r *http.Request, useCase usecase.Use
 		*req.Delta += key.(int64)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(req); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.UsecaseMemStorage) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req models.Metrics
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		log.Println("ошибка декодирования JSON")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	if req.ID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if req.MType == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	value := useCase.UsecaseRead(req.MType, req.ID)
+
+	if value == nil {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		if req.MType == "gauge" {
+			*req.Value = value.(float64)
+		} else if req.MType == "counter" {
+			*req.Delta = value.(int64)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
