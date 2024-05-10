@@ -24,15 +24,22 @@ func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 	r.Post("/update/{type}/{name}/{value}", func(w http.ResponseWriter, r *http.Request) {
 		handlerPost(w, r, useCase)
 	})
+	r.Post("/update/", func(w http.ResponseWriter, r *http.Request) {
+		handlerJSONUpdate(w, r, useCase)
+	})
 	r.Post("/update", func(w http.ResponseWriter, r *http.Request) {
 		handlerJSONUpdate(w, r, useCase)
 	})
 	r.Get("/value/{type}/{name}", func(w http.ResponseWriter, r *http.Request) {
 		handlerGet(w, r, useCase)
 	})
+	r.Post("/value/", func(w http.ResponseWriter, r *http.Request) {
+		handlerJSONValue(w, r, useCase)
+	})
 	r.Post("/value", func(w http.ResponseWriter, r *http.Request) {
 		handlerJSONValue(w, r, useCase)
 	})
+
 	return r
 }
 
@@ -163,8 +170,6 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 	}
 	defer r.Body.Close()
 
-	log.Println(req)
-
 	if req.ID == "" {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -233,7 +238,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	}
 
 	value := useCase.UsecaseRead(req.MType, req.ID)
-	log.Println("////////////////////value:", value)
+
 	if value == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
