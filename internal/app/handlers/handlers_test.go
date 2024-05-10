@@ -10,11 +10,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, method,
-	path string) (*http.Response, string) {
+	path string, body string) (*http.Response, string) {
 
 	// Создаем кастомный клиент
 	client := &http.Client{
@@ -23,7 +24,7 @@ func testRequest(t *testing.T, ts *httptest.Server, method,
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(method, ts.URL+path, nil)
+	req, err := http.NewRequest(method, ts.URL+path, strings.NewReader(body))
 	require.NoError(t, err)
 
 	resp, err := client.Do(req)
@@ -58,6 +59,7 @@ func TestRoute(t *testing.T) {
 	type values struct {
 		url    string
 		method string
+		body   string
 	}
 
 	type want struct {
@@ -88,12 +90,13 @@ func TestRoute(t *testing.T) {
 			},
 			want: want{
 				status: http.StatusOK,
+				body:   "\n        <html>\n        <head><title>Metrics</title></head>\n        <body>\n            <h1>Список метрик</h1>\n            <ul>\n                \n                <li>Allock: 100</li>\n                \n            </ul>\n        </body>\n        </html>\n    ",
 			},
 		},
 		{
 			name: "Test #3 не тот метод handlerPost",
 			values: values{
-				url:    "/update/gauge/name/112",
+				url:    "/update/gauge/name/100",
 				method: "GET",
 			},
 			want: want{
@@ -101,19 +104,20 @@ func TestRoute(t *testing.T) {
 			},
 		},
 		{
-			name: "Test #4 не валидный value в запросе handlerPost",
+			name: "Test #4 невалидный value в запросе handlerPost",
 			values: values{
 				url:    "/update/gauge/name/value",
 				method: "POST",
 			},
 			want: want{
 				status: http.StatusBadRequest,
+				body:   "ошибка конвертации",
 			},
 		},
 		{
 			name: "Test #5 пустой name в запросе handlerPost",
 			values: values{
-				url:    "/update/gauge//112",
+				url:    "/update/gauge//100",
 				method: "POST",
 			},
 			want: want{
@@ -123,7 +127,7 @@ func TestRoute(t *testing.T) {
 		{
 			name: "Test #6 запрос gauge handlerPost",
 			values: values{
-				url:    "/update/gauge/Allock/112",
+				url:    "/update/gauge/Allock/100",
 				method: "POST",
 			},
 			want: want{
@@ -133,7 +137,7 @@ func TestRoute(t *testing.T) {
 		{
 			name: "Test #7 неизвестный тип handlerPost",
 			values: values{
-				url:    "/update/gaga/Allock/112",
+				url:    "/update/gaga/Allock/100",
 				method: "POST",
 			},
 			want: want{
@@ -143,7 +147,7 @@ func TestRoute(t *testing.T) {
 		{
 			name: "Test #8 запрос counter handlerPost",
 			values: values{
-				url:    "/update/counter/Allock/112",
+				url:    "/update/counter/Allock/100",
 				method: "POST",
 			},
 			want: want{
@@ -188,6 +192,7 @@ func TestRoute(t *testing.T) {
 			},
 			want: want{
 				status: http.StatusNotFound,
+				body:   "404 page not found\n",
 			},
 		},
 		{
@@ -198,15 +203,40 @@ func TestRoute(t *testing.T) {
 			},
 			want: want{
 				status: http.StatusOK,
+				body:   "100",
+			},
+		},
+		{
+			name: "Test #14 not method handlerJSONPost",
+			values: values{
+				url:    "/update",
+				method: "GET",
+			},
+			want: want{
+				status: http.StatusMethodNotAllowed,
+			},
+		},
+		{
+			name: "Test #15 handlerJSONPost",
+			values: values{
+				url:    "/update",
+				method: "POST",
+				body:   `{"id":"Alloc", "type":"gauge", "value":6.05}`,
+			},
+			want: want{
+				status: http.StatusOK,
+				body:   "{\"id\":\"Alloc\",\"type\":\"gauge\",\"value\":6.05}\n",
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, _ := testRequest(t, ts, test.values.method, test.values.url)
+			resp, body := testRequest(t, ts, test.values.method, test.values.url, test.values.body)
 			defer resp.Body.Close()
 			assert.Equal(t, test.want.status, resp.StatusCode)
 
+			// Затем сравниваем его содержимое
+			assert.Equal(t, test.want.body, body)
 		})
 	}
 }
