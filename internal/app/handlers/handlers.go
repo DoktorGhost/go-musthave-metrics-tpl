@@ -158,11 +158,12 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 	var req models.Metrics
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
-		log.Println("ошибка декодирования JSON")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
+
+	log.Println(req)
 
 	if req.ID == "" {
 		w.WriteHeader(http.StatusNotFound)
@@ -175,13 +176,21 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 	}
 
 	if req.MType == "gauge" {
-		useCase.UsecaseUpdateGauge(req.ID, *req.Value)
-		key := useCase.UsecaseRead(req.MType, req.ID)
-		*req.Value = key.(float64)
+		if req.Value != nil {
+			useCase.UsecaseUpdateGauge(req.ID, *req.Value)
+			key := useCase.UsecaseRead(req.MType, req.ID)
+			*req.Value = key.(float64)
+		} else {
+			return
+		}
 	} else if req.MType == "counter" {
-		useCase.UsecaseUpdateCounter(req.ID, *req.Delta)
-		key := useCase.UsecaseRead(req.MType, req.ID)
-		*req.Delta += key.(int64)
+		if req.Delta != nil {
+			useCase.UsecaseUpdateCounter(req.ID, *req.Delta)
+			key := useCase.UsecaseRead(req.MType, req.ID)
+			*req.Delta = key.(int64)
+		} else {
+			return
+		}
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -191,6 +200,7 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(req); err != nil {
+		log.Println("ошибка: конечная")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -203,6 +213,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	}
 
 	var req models.Metrics
+	var res models.Metrics
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
 		log.Println("ошибка декодирования JSON")
@@ -222,14 +233,21 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	}
 
 	value := useCase.UsecaseRead(req.MType, req.ID)
-
+	log.Println("////////////////////value:", value)
 	if value == nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	} else {
 		if req.MType == "gauge" {
-			*req.Value = value.(float64)
+			res.ID = req.ID
+			res.MType = req.MType
+			vv := value.(float64)
+			res.Value = &vv
 		} else if req.MType == "counter" {
-			*req.Delta = value.(int64)
+			res.ID = req.ID
+			res.MType = req.MType
+			vv := value.(int64)
+			res.Delta = &vv
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -239,7 +257,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	w.WriteHeader(http.StatusOK)
 
 	enc := json.NewEncoder(w)
-	if err := enc.Encode(req); err != nil {
+	if err := enc.Encode(res); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
