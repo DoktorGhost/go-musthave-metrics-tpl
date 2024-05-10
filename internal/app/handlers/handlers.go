@@ -169,7 +169,7 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 		return
 	}
 
-	if req.MType == "" && (req.Value == nil || req.Delta == nil || *req.Value == 0 || *req.Delta == 0) {
+	if req.MType == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
