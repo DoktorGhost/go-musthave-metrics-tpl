@@ -41,8 +41,6 @@ func GzipMiddleware(next http.Handler) http.Handler {
 				// Создаем ResponseWriter с оберткой для сжатия данных
 				gzWriter := &gzipWriter{Writer: gz, ResponseWriter: w}
 				w = gzWriter
-			} else {
-
 			}
 		}
 
