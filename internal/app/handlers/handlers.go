@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/compressor"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
@@ -17,6 +18,8 @@ func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(logger.WithLogging)
+	r.Use(compressor.GzipMiddleware)
+	r.Use(compressor.DecompressMiddleware)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		handlerAllMetrics(w, r, useCase)
