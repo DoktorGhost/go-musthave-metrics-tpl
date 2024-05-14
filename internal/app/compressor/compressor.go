@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+// gzipResponseWriter обертывает http.ResponseWriter для поддержки сжатия данных.
+type gzipWriter struct {
+	io.Writer
+	http.ResponseWriter
+}
+
+// Write перенаправляет запись в сжатый Writer.
+func (w gzipWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
+}
+
 // GzipMiddleware сжимает запросы и ответы с поддержкой gzip для определенных типов контента.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +26,8 @@ func GzipMiddleware(next http.Handler) http.Handler {
 		if strings.Contains(acceptEncoding, "gzip") {
 			// Проверяем тип контента запроса
 			contentType := r.Header.Get("Content-Type")
-			if contentType == "application/json" || contentType == "text/html" {
+			accept := r.Header.Get("Accept")
+			if contentType == "application/json" || contentType == "text/html" || accept == "html/text" {
 				// Добавляем заголовок Content-Encoding для указания, что ответ будет сжат
 				w.Header().Set("Content-Encoding", "gzip")
 
@@ -29,23 +41,14 @@ func GzipMiddleware(next http.Handler) http.Handler {
 				// Создаем ResponseWriter с оберткой для сжатия данных
 				gzWriter := &gzipWriter{Writer: gz, ResponseWriter: w}
 				w = gzWriter
+			} else {
+
 			}
 		}
 
 		// Продолжаем обработку запроса в следующем обработчике
 		next.ServeHTTP(w, r)
 	})
-}
-
-// gzipResponseWriter обертывает http.ResponseWriter для поддержки сжатия данных.
-type gzipWriter struct {
-	io.Writer
-	http.ResponseWriter
-}
-
-// Write перенаправляет запись в сжатый Writer.
-func (w gzipWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
 }
 
 func DecompressMiddleware(next http.Handler) http.Handler {

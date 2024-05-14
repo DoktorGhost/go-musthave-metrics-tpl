@@ -150,12 +150,12 @@ func handlerAllMetrics(res http.ResponseWriter, req *http.Request, useCase useca
 
 	// Отображаем HTML-страницу
 	res.Header().Set("Content-Type", "text/html")
+	res.WriteHeader(http.StatusOK)
 	err = tmpl.Execute(res, metrics)
 	if err != nil {
 		http.Error(res, "Ошибка отображения HTML-страницы", http.StatusInternalServerError)
 		return
 	}
-	res.WriteHeader(http.StatusOK)
 
 }
 
