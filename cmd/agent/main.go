@@ -6,7 +6,6 @@ import (
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/metrics"
 	"go.uber.org/zap"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -14,9 +13,9 @@ import (
 func main() {
 
 	client := &http.Client{}
-	addr, ReportInterval, PollInterval := config.ParseConfigClient()
+	conf := config.ParseConfigClient()
 
-	host := "http://" + addr.Host + ":" + strconv.Itoa(addr.Port) + "/"
+	host := "http://" + conf.Host + ":" + conf.Port + "/"
 
 	logg, err := zap.NewDevelopment()
 	if err != nil {
@@ -35,14 +34,14 @@ func main() {
 		defer wg.Done()
 		for {
 			m.CollectMetrics()
-			time.Sleep(time.Duration(PollInterval) * time.Second)
+			time.Sleep(time.Duration(conf.PollInterval) * time.Second)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		for {
-			time.Sleep(time.Duration(ReportInterval) * time.Second)
+			time.Sleep(time.Duration(conf.ReportInterval) * time.Second)
 			m.UpdateMetrics(client, host)
 		}
 	}()

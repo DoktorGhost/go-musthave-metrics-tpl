@@ -8,7 +8,6 @@ import (
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"go.uber.org/zap"
 	"net/http"
-	"strconv"
 )
 
 func StartServer(hostPort *config.Config) error {
@@ -23,11 +22,11 @@ func StartServer(hostPort *config.Config) error {
 	defer logg.Sync()
 	logger.InitLogger(logg)
 	sugar := *logg.Sugar()
-	sugar.Infow("server started", "addr", hostPort.String())
+	sugar.Infow("server started", "addr", hostPort.Host+hostPort.Port)
 
 	r := handlers.InitRoutes(*useCase)
 
-	err = http.ListenAndServe(":"+strconv.Itoa(hostPort.Port), r)
+	err = http.ListenAndServe(":"+hostPort.Port, r)
 
 	if err != nil {
 		return err

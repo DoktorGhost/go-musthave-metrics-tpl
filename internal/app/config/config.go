@@ -4,29 +4,40 @@ import (
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
+	"os"
 	"strconv"
 	"strings"
 )
 
 type Config struct {
+	Host            string
+	Port            string
+	ReportInterval  int
+	PollInterval    int
+	StoreInterval   int
+	FileStoragePath string
+	Restore         bool
+}
+
+type EnvStruct struct {
+	Hp              []string `env:"ADDRESS" envSeparator:":"`
+	ReportInterval  int      `env:"REPORT_INTERVAL"`
+	PollInterval    int      `env:"POLL_INTERVAL"`
+	StoreInterval   int      `env:"STORE_INTERVAL"`
+	FileStoragePath string   `env:"FILE_STORAGE_PATH"`
+	Restore         bool     `env:"RESTORE"`
+}
+
+type HostPort struct {
 	Host string
 	Port int
 }
 
-type HostPort struct {
-	Hp             []string `env:"ADDRESS" envSeparator:":"`
-	ReportInterval int      `env:"REPORT_INTERVAL"`
-	PollInterval   int      `env:"POLL_INTERVAL"`
-}
-
-var ReportInterval int
-var PollInterval int
-
-func (c *Config) String() string {
+func (c *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
-func (c *Config) Set(value string) error {
+func (c *HostPort) Set(value string) error {
 	hp := strings.Split(value, ":")
 	if len(hp) != 2 {
 		return fmt.Errorf("invalid host:port format: %s", value)
@@ -42,64 +53,98 @@ func (c *Config) Set(value string) error {
 }
 
 func ParseConfigServer() *Config {
-	var cfg HostPort
-	env.Parse(&cfg)
-	addr := new(Config)
-	if len(cfg.Hp) == 0 {
-		_ = flag.Value(addr)
-		flag.Var(addr, "a", "Net address host:port")
-		flag.Parse()
-		if addr.Host == "" {
-			addr.Host = "localhost"
-		}
-		if addr.Port == 0 {
-			addr.Port = 8080
-		}
+	var envStruct EnvStruct
+	//считываем все переменны окружения в cfg
+	env.Parse(&envStruct)
+
+	config := new(Config)
+	hostPort := new(HostPort)
+
+	flag.Var(hostPort, "a", "Net address host:port")
+	flag.IntVar(&config.StoreInterval, "i", 300, "интервал времени в секундах, по истечении которого текущие показания сервера сохраняются на диск")
+	flag.StringVar(&config.FileStoragePath, "f", "/tmp/metrics-db.json", "полное имя файла, куда сохраняются текущие значения")
+	flag.BoolVar(&config.Restore, "r", true, "полное имя файла, куда сохраняются текущие значения")
+	flag.Parse()
+
+	_, exists := os.LookupEnv("ADDRESS")
+	if exists {
+		config.Host = envStruct.Hp[0]
+		config.Port = envStruct.Hp[1]
 	} else {
-		addr.Host = cfg.Hp[0]
-		port, err := strconv.Atoi(cfg.Hp[1])
+		if hostPort.Host == "" {
+			config.Host = "localhost"
+		}
+		if hostPort.Port == 0 {
+			config.Port = "8080"
+		}
+	}
+
+	value, exists := os.LookupEnv("STORE_INTERVAL")
+	if exists {
+		intValue, err := strconv.Atoi(value)
 		if err != nil {
 			return nil
 		}
-		addr.Port = port
+		config.StoreInterval = intValue
 	}
 
-	return addr
+	value, exists = os.LookupEnv("FILE_STORAGE_PATH")
+	if exists {
+		config.FileStoragePath = value
+	}
+
+	_, exists = os.LookupEnv("RESTORE")
+	if exists {
+		config.Restore = envStruct.Restore
+	}
+
+	return config
 }
 
-func ParseConfigClient() (*Config, int, int) {
-	var cfg HostPort
-	env.Parse(&cfg)
-	addr := new(Config)
+func ParseConfigClient() *Config {
+	var envStruct EnvStruct
+	//считываем все переменны окружения в cfg
+	env.Parse(&envStruct)
 
-	if len(cfg.Hp) == 0 {
-		_ = flag.Value(addr)
-		flag.Var(addr, "a", "Net address host:port")
-		flag.IntVar(&ReportInterval, "r", 10, "частоту отправки метрик на сервер")
-		flag.IntVar(&PollInterval, "p", 2, "частоту опроса метрик из пакета runtime")
-		flag.Parse()
-		if addr.Host == "" {
-			addr.Host = "localhost"
-		}
-		if addr.Port == 0 {
-			addr.Port = 8080
-		}
+	config := new(Config)
+	hostPort := new(HostPort)
+
+	flag.Var(hostPort, "a", "Net address host:port")
+	flag.IntVar(&config.ReportInterval, "r", 10, "частотa отправки метрик на сервер")
+	flag.IntVar(&config.PollInterval, "p", 2, "частотa опроса метрик из пакета runtime")
+	flag.Parse()
+
+	_, exists := os.LookupEnv("ADDRESS")
+	if exists {
+		config.Host = envStruct.Hp[0]
+		config.Port = envStruct.Hp[1]
 	} else {
-		addr.Host = cfg.Hp[0]
-		port, err := strconv.Atoi(cfg.Hp[1])
-		if err != nil {
-			return nil, 0, 0
+		if hostPort.Host == "" {
+			config.Host = "localhost"
 		}
-		addr.Port = port
+		if hostPort.Port == 0 {
+			config.Port = "8080"
+		}
 	}
 
-	if cfg.ReportInterval != 0 {
-		ReportInterval = cfg.ReportInterval
+	value, exists := os.LookupEnv("REPORT_INTERVAL")
+	if exists {
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return nil
+		}
+		config.ReportInterval = intValue
 	}
 
-	if cfg.PollInterval != 0 {
-		PollInterval = cfg.PollInterval
+	value, exists = os.LookupEnv("POLL_INTERVAL")
+	if exists {
+		intValue, err := strconv.Atoi(value)
+		if err != nil {
+			return nil
+		}
+		config.PollInterval = intValue
 	}
 
-	return addr, ReportInterval, PollInterval
+	return config
+
 }
