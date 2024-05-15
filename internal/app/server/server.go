@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func StartServer(hostPort *config.Config) error {
+func StartServer(conf *config.Config) error {
 	db := maps.NewMapStorage()
 	useCase := usecase.NewUsecaseMemStorage(db)
 
@@ -22,11 +22,11 @@ func StartServer(hostPort *config.Config) error {
 	defer logg.Sync()
 	logger.InitLogger(logg)
 	sugar := *logg.Sugar()
-	sugar.Infow("server started", "addr", hostPort.Host+hostPort.Port)
+	sugar.Infow("server started", "addr", conf.Host+conf.Port)
 
 	r := handlers.InitRoutes(*useCase)
 
-	err = http.ListenAndServe(":"+hostPort.Port, r)
+	err = http.ListenAndServe(":"+conf.Port, r)
 
 	if err != nil {
 		return err

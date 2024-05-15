@@ -6,9 +6,9 @@ import (
 )
 
 func main() {
-	hostPort := config.ParseConfigServer()
+	conf := config.ParseConfigServer()
 
-	err := server.StartServer(hostPort)
+	err := server.StartServer(conf)
 	if err != nil {
 		panic(err)
 	}

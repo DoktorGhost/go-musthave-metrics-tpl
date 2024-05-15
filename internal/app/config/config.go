@@ -66,20 +66,24 @@ func ParseConfigServer() *Config {
 	flag.BoolVar(&config.Restore, "r", true, "полное имя файла, куда сохраняются текущие значения")
 	flag.Parse()
 
-	_, exists := os.LookupEnv("ADDRESS")
+	value, exists := os.LookupEnv("ADDRESS")
 	if exists {
 		config.Host = envStruct.Hp[0]
 		config.Port = envStruct.Hp[1]
 	} else {
 		if hostPort.Host == "" {
 			config.Host = "localhost"
+		} else {
+			config.Host = hostPort.Host
 		}
 		if hostPort.Port == 0 {
 			config.Port = "8080"
+		} else {
+			config.Port = strconv.Itoa(hostPort.Port)
 		}
 	}
 
-	value, exists := os.LookupEnv("STORE_INTERVAL")
+	value, exists = os.LookupEnv("STORE_INTERVAL")
 	if exists {
 		intValue, err := strconv.Atoi(value)
 		if err != nil {
