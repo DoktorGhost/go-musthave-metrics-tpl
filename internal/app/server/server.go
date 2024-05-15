@@ -22,7 +22,7 @@ func StartServer(conf *config.Config) error {
 	defer logg.Sync()
 	logger.InitLogger(logg)
 	sugar := *logg.Sugar()
-	sugar.Infow("server started", "addr", conf.Host+conf.Port)
+	sugar.Infow("server started", "addr", conf.Host+":"+conf.Port)
 
 	r := handlers.InitRoutes(*useCase)
 
