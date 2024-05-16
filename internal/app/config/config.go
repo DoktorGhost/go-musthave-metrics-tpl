@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -55,7 +56,10 @@ func (c *HostPort) Set(value string) error {
 func ParseConfigServer() *Config {
 	var envStruct EnvStruct
 	//считываем все переменны окружения в cfg
-	env.Parse(&envStruct)
+	if err := env.Parse(&envStruct); err != nil {
+		log.Println(err)
+		return nil
+	}
 
 	config := new(Config)
 	hostPort := new(HostPort)
@@ -63,7 +67,7 @@ func ParseConfigServer() *Config {
 	flag.Var(hostPort, "a", "Net address host:port")
 	flag.IntVar(&config.StoreInterval, "i", 300, "интервал времени в секундах, по истечении которого текущие показания сервера сохраняются на диск")
 	flag.StringVar(&config.FileStoragePath, "f", "/tmp/metrics-db.json", "полное имя файла, куда сохраняются текущие значения")
-	flag.BoolVar(&config.Restore, "r", true, "полное имя файла, куда сохраняются текущие значения")
+	flag.BoolVar(&config.Restore, "r", true, "загружать или нет ранее сохранённые значения из указанного файла при старте сервера")
 	flag.Parse()
 
 	_, exists := os.LookupEnv("ADDRESS")
