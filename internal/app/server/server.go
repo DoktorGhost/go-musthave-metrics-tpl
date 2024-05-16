@@ -75,7 +75,7 @@ func StartServer(conf *config.Config) error {
 				sugar.Infow("Ошибка создания Producer:", err)
 				continue
 			}
-			defer prod.Close()
+
 			for key, value := range mapsMetrics {
 				var metr models.Metrics
 				switch v := value.(type) {
@@ -103,6 +103,7 @@ func StartServer(conf *config.Config) error {
 					sugar.Infow("Успешная запись метрик")
 				}
 			}
+			prod.Close()
 		}
 	}()
 
