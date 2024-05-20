@@ -69,6 +69,7 @@ func ParseConfigServer() *Config {
 	flag.Var(hostPort, "a", "Net address host:port")
 	flag.IntVar(&config.StoreInterval, "i", 300, "интервал времени в секундах, по истечении которого текущие показания сервера сохраняются на диск")
 	flag.StringVar(&config.FileStoragePath, "f", "/tmp/metrics-db.json", "полное имя файла, куда сохраняются текущие значения")
+	flag.StringVar(&config.DatabaseDSN, "d", "", "Строка с адресом подключения к БД")
 	flag.BoolVar(&config.Restore, "r", true, "загружать или нет ранее сохранённые значения из указанного файла при старте сервера")
 	flag.Parse()
 
@@ -102,6 +103,11 @@ func ParseConfigServer() *Config {
 	_, exists = os.LookupEnv("RESTORE")
 	if exists {
 		config.Restore = envStruct.Restore
+	}
+
+	value, exists = os.LookupEnv("DATABASE_DSN")
+	if exists {
+		config.DatabaseDSN = value
 	}
 
 	return config
@@ -153,11 +159,6 @@ func ParseConfigClient() *Config {
 			return nil
 		}
 		config.PollInterval = intValue
-	}
-
-	value, exists = os.LookupEnv("DATABASE_DSN")
-	if exists {
-		config.DatabaseDSN = value
 	}
 
 	return config

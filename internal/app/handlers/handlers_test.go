@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"compress/gzip"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/config"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/storage/maps"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
@@ -53,8 +54,10 @@ func TestRoute(t *testing.T) {
 	sugar := *logg.Sugar()
 	sugar.Infow("server started")
 
+	conf := config.ParseConfigServer()
+
 	//добавим в бд тестовую запись
-	ts := httptest.NewServer(InitRoutes(*storage))
+	ts := httptest.NewServer(InitRoutes(*storage, conf))
 	storage.UsecaseUpdateGauge("Allock", 100)
 	defer ts.Close()
 
