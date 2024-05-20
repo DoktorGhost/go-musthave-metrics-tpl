@@ -60,7 +60,7 @@ func StartServer(conf *config.Config) error {
 		defer cons.Close()
 	}
 
-	r := handlers.InitRoutes(*useCase)
+	r := handlers.InitRoutes(*useCase, conf)
 
 	var wg sync.WaitGroup
 	wg.Add(1)

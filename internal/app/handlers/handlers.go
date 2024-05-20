@@ -1,20 +1,23 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/compressor"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/config"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"github.com/go-chi/chi/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
+func InitRoutes(useCase usecase.UsecaseMemStorage, conf *config.Config) chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(logger.WithLogging)
@@ -41,6 +44,9 @@ func InitRoutes(useCase usecase.UsecaseMemStorage) chi.Router {
 	})
 	r.Post("/value", func(w http.ResponseWriter, r *http.Request) {
 		handlerJSONValue(w, r, useCase)
+	})
+	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		handlerPing(w, r, conf)
 	})
 
 	return r
@@ -269,4 +275,29 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func handlerPing(res http.ResponseWriter, req *http.Request, conf *config.Config) {
+	if req.Method != http.MethodGet {
+		res.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	ps := conf.DatabaseDSN
+
+	db, err := sql.Open("pgx", ps)
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
 }
