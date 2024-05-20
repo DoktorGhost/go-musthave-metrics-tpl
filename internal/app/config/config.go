@@ -18,6 +18,7 @@ type Config struct {
 	StoreInterval   int
 	FileStoragePath string
 	Restore         bool
+	DatabaseDSN     string
 }
 
 type EnvStruct struct {
@@ -27,6 +28,7 @@ type EnvStruct struct {
 	StoreInterval   int      `env:"STORE_INTERVAL"`
 	FileStoragePath string   `env:"FILE_STORAGE_PATH"`
 	Restore         bool     `env:"RESTORE"`
+	DatabaseDSN     string   `env:"DATABASE_DSN"`
 }
 
 type HostPort struct {
@@ -151,6 +153,11 @@ func ParseConfigClient() *Config {
 			return nil
 		}
 		config.PollInterval = intValue
+	}
+
+	value, exists = os.LookupEnv("DATABASE_DSN")
+	if exists {
+		config.DatabaseDSN = value
 	}
 
 	return config
