@@ -46,7 +46,7 @@ func InitRoutes(useCase usecase.UsecaseMemStorage, conf *config.Config) chi.Rout
 		handlerJSONValue(w, r, useCase)
 	})
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-		handlerGetPing(w, r, conf)
+		handlerPing(w, r, conf)
 	})
 
 	return r
@@ -277,7 +277,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	}
 }
 
-func handlerGetPing(res http.ResponseWriter, req *http.Request, conf *config.Config) {
+func handlerPing(res http.ResponseWriter, req *http.Request, conf *config.Config) {
 	if req.Method != http.MethodGet {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -290,6 +290,14 @@ func handlerGetPing(res http.ResponseWriter, req *http.Request, conf *config.Con
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	res.WriteHeader(http.StatusOK)
 }
