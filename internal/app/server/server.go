@@ -8,6 +8,7 @@ import (
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/osfile"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/storage/maps"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/storage/postgres"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
 	"go.uber.org/zap"
 	"io"
@@ -17,9 +18,6 @@ import (
 )
 
 func StartServer(conf *config.Config) error {
-	db := maps.NewMapStorage()
-	useCase := usecase.NewUsecaseMemStorage(db)
-
 	//логирование
 	logg, err := zap.NewDevelopment()
 	if err != nil {
@@ -29,6 +27,22 @@ func StartServer(conf *config.Config) error {
 	logger.InitLogger(logg)
 	sugar := *logg.Sugar()
 	sugar.Infow("server started", "addr", conf.Host+":"+conf.Port)
+
+	//инициализация бд
+	var useCase *usecase.UsecaseMemStorage
+
+	if conf.DatabaseDSN != "" {
+		db, err := postgres.NewPostgresStorage(conf.DatabaseDSN)
+		if err != nil {
+			sugar.Fatalw("Ошибка при подключении к БД", "error", err)
+		}
+		useCase = usecase.NewUsecaseMemStorage(db)
+		sugar.Infow("Успешное подключение к БД")
+	} else {
+		db := maps.NewMapStorage()
+		useCase = usecase.NewUsecaseMemStorage(db)
+		sugar.Infow("Использование оперативной памяти вместо БД")
+	}
 
 	//загрузка ранее сохраненных метрик
 	if conf.Restore {

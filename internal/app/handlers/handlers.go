@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func InitRoutes(useCase usecase.UsecaseMemStorage, conf *config.Config) chi.Router {
@@ -214,7 +216,6 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(req); err != nil {
-		log.Println("ошибка: конечная")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -291,13 +292,11 @@ func handlerPing(res http.ResponseWriter, req *http.Request, conf *config.Config
 		return
 	}
 
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	if err = db.PingContext(ctx); err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	res.WriteHeader(http.StatusOK)
 }
