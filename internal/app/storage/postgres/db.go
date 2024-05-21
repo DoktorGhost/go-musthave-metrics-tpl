@@ -152,7 +152,6 @@ func (r *PostgresStorage) UpdateGauge(nameMetric string, value float64) {
 			return
 		}
 	}
-	return
 }
 
 func (r *PostgresStorage) UpdateCounter(nameMetric string, delta int64) {
@@ -167,7 +166,6 @@ func (r *PostgresStorage) UpdateCounter(nameMetric string, delta int64) {
 			log.Println(err)
 			return
 		}
-		return
 	} else {
 		deltaRes := delta + res.(int64)
 		query := "UPDATE metrics SET delta = $1 WHERE name = $2"
@@ -176,7 +174,5 @@ func (r *PostgresStorage) UpdateCounter(nameMetric string, delta int64) {
 			log.Println(err)
 			return
 		}
-		return
 	}
-	//fsdf
 }
