@@ -178,5 +178,5 @@ func (r *PostgresStorage) UpdateCounter(nameMetric string, delta int64) {
 		}
 		return
 	}
-
+	//fsdf
 }
