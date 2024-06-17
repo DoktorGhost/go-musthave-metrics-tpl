@@ -27,7 +27,7 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         mtype VARCHAR(255) NOT NULL CHECK (mtype IN ('gauge', 'counter')),
-        delta INTEGER, 
+        delta BIGINT, 
         val DOUBLE PRECISION
     );
     `
@@ -37,33 +37,6 @@ func NewPostgresStorage(dsn string) (*PostgresStorage, error) {
 
 	return &PostgresStorage{db: db}, nil
 }
-
-/*
-func (r *PostgresStorage) Read(nameType, nameMetric string) interface{} {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	var result interface{}
-	if nameType == "gauge" {
-		err := r.db.QueryRow("SELECT val FROM metrics WHERE name = $1", nameMetric).Scan(&result)
-		log.Println(result)
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		return result
-	} else if nameType == "counter" {
-		err := r.db.QueryRow("SELECT delta FROM metrics WHERE name = $1", nameMetric).Scan(&result)
-		log.Println(result)
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		return result
-	}
-
-	return nil
-}
-*/
 
 func (r *PostgresStorage) Read(nameType, nameMetric string) interface{} {
 	r.mu.RLock()
