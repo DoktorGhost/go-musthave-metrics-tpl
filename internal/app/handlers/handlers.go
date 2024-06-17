@@ -50,6 +50,9 @@ func InitRoutes(useCase usecase.UsecaseMemStorage, conf *config.Config) chi.Rout
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		handlerPing(w, r, conf)
 	})
+	r.Post("/updates/", func(w http.ResponseWriter, r *http.Request) {
+		handlerUpdates(w, r, useCase)
+	})
 
 	return r
 }
@@ -299,4 +302,65 @@ func handlerPing(res http.ResponseWriter, req *http.Request, conf *config.Config
 		return
 	}
 	res.WriteHeader(http.StatusOK)
+}
+
+func handlerUpdates(w http.ResponseWriter, r *http.Request, useCase usecase.UsecaseMemStorage) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req []models.Metrics
+	var res models.Metrics
+	var responses []models.Metrics
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		log.Println("ошибка декодирования JSON")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	for _, m := range req {
+		if m.ID == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if m.MType == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if m.MType == "gauge" {
+			if m.Value != nil {
+				useCase.UsecaseUpdateGauge(m.ID, *m.Value)
+				key := useCase.UsecaseRead(m.MType, m.ID)
+				*m.Value = key.(float64)
+			} else {
+				return
+			}
+		} else if m.MType == "counter" {
+			if m.Delta != nil {
+				useCase.UsecaseUpdateCounter(m.ID, *m.Delta)
+				key := useCase.UsecaseRead(m.MType, m.ID)
+				*m.Delta = key.(int64)
+			} else {
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+
+		responses = append(responses, res)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(responses); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
