@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/compressor"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/config"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/crypto"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/logger"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/usecase"
@@ -25,6 +26,7 @@ func InitRoutes(useCase usecase.UsecaseMemStorage, conf *config.Config) chi.Rout
 	r.Use(logger.WithLogging)
 	r.Use(compressor.GzipMiddleware)
 	r.Use(compressor.DecompressMiddleware)
+	r.Use(crypto.СryptoMiddleware(conf))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		handlerAllMetrics(w, r, useCase)
