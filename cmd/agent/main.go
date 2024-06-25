@@ -42,7 +42,7 @@ func main() {
 		defer wg.Done()
 		for {
 			time.Sleep(time.Duration(conf.ReportInterval) * time.Second)
-			m.UpdateMetrics(client, host)
+			m.UpdateMetrics(client, host, conf)
 		}
 	}()
 	wg.Wait()

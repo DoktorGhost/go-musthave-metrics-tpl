@@ -2,7 +2,11 @@ package metrics
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/config"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"go.uber.org/zap"
 	"math/rand"
@@ -70,7 +74,7 @@ func (m *Metrics) CollectMetrics() {
 
 }
 
-func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
+func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string, conf *config.Config) {
 
 	var bodys []models.Metrics
 	bodys = append(bodys, models.Metrics{
@@ -100,6 +104,14 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 			break
 		}
 		request.Header.Add("Content-Type", "application/json")
+
+		if conf.SecretKey != "" {
+			h := hmac.New(sha256.New, []byte(conf.SecretKey))
+			h.Write(jsonBody)
+			hash := hex.EncodeToString(h.Sum(nil))
+			request.Header.Add("HashSHA256", hash)
+		}
+
 		response, err := client.Do(request)
 		if err != nil {
 			logger.Error("Error occurred", zap.Error(err))
@@ -109,5 +121,3 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 		defer response.Body.Close()
 	}
 }
-
-//iter13
