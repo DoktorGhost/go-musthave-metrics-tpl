@@ -197,7 +197,6 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 	}
 
 	if req.MType == "" {
-		log.Println("req.MType == \"\"")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -239,7 +238,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-
+	w.Header().Set("Content-Type", "application/json")
 	var req models.Metrics
 	var res models.Metrics
 	dec := json.NewDecoder(r.Body)
