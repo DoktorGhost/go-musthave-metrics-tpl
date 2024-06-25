@@ -24,9 +24,9 @@ func InitRoutes(useCase usecase.UsecaseMemStorage, conf *config.Config) chi.Rout
 	r := chi.NewRouter()
 
 	r.Use(logger.WithLogging)
+	r.Use(crypto.CryptoMiddleware(conf))
 	r.Use(compressor.GzipMiddleware)
 	r.Use(compressor.DecompressMiddleware)
-	r.Use(crypto.CryptoMiddleware(conf))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		handlerAllMetrics(w, r, useCase)
