@@ -248,6 +248,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	}
 
 	if req.MType == "" {
+		log.Println("req.MType == \"\"")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -269,6 +270,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 			vv := value.(int64)
 			res.Delta = &vv
 		} else {
+			log.Println("req.MType unknown")
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}
