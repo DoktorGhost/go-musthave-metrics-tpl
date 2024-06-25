@@ -19,6 +19,7 @@ type Config struct {
 	FileStoragePath string
 	Restore         bool
 	DatabaseDSN     string
+	SecretKey       string
 }
 
 type EnvStruct struct {
@@ -29,7 +30,11 @@ type EnvStruct struct {
 	FileStoragePath string   `env:"FILE_STORAGE_PATH"`
 	Restore         bool     `env:"RESTORE"`
 	DatabaseDSN     string   `env:"DATABASE_DSN"`
+	SecretKey       string   `env:"KEY"`
 }
+
+//$env:DATABASE_DSN = "postgres://admin:admin@localhost:5433/postgres?sslmode=disable"
+//echo $env:DATABASE_DSN
 
 type HostPort struct {
 	Host string
@@ -70,6 +75,7 @@ func ParseConfigServer() *Config {
 	flag.IntVar(&config.StoreInterval, "i", 300, "интервал времени в секундах, по истечении которого текущие показания сервера сохраняются на диск")
 	flag.StringVar(&config.FileStoragePath, "f", "/tmp/metrics-db.json", "полное имя файла, куда сохраняются текущие значения")
 	flag.StringVar(&config.DatabaseDSN, "d", "", "Строка с адресом подключения к БД")
+	flag.StringVar(&config.DatabaseDSN, "k", "", "Ключ шифрования")
 	flag.BoolVar(&config.Restore, "r", true, "загружать или нет ранее сохранённые значения из указанного файла при старте сервера")
 	flag.Parse()
 
@@ -110,6 +116,11 @@ func ParseConfigServer() *Config {
 		config.DatabaseDSN = value
 	}
 
+	value, exists = os.LookupEnv("KEY")
+	if exists {
+		config.SecretKey = value
+	}
+
 	return config
 }
 
@@ -124,6 +135,7 @@ func ParseConfigClient() *Config {
 	flag.Var(hostPort, "a", "Net address host:port")
 	flag.IntVar(&config.ReportInterval, "r", 10, "частотa отправки метрик на сервер")
 	flag.IntVar(&config.PollInterval, "p", 2, "частотa опроса метрик из пакета runtime")
+	flag.StringVar(&config.DatabaseDSN, "k", "", "Ключ шифрования")
 	flag.Parse()
 
 	_, exists := os.LookupEnv("ADDRESS")
@@ -159,6 +171,11 @@ func ParseConfigClient() *Config {
 			return nil
 		}
 		config.PollInterval = intValue
+	}
+
+	value, exists = os.LookupEnv("KEY")
+	if exists {
+		config.SecretKey = value
 	}
 
 	return config

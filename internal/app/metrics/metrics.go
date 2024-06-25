@@ -2,7 +2,12 @@ package metrics
 
 import (
 	"bytes"
+	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/config"
 	"github.com/DoktorGhost/go-musthave-metrics-tpl/internal/app/models"
 	"go.uber.org/zap"
 	"math/rand"
@@ -70,7 +75,7 @@ func (m *Metrics) CollectMetrics() {
 
 }
 
-func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
+func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string, conf *config.Config) {
 
 	var bodys []models.Metrics
 	bodys = append(bodys, models.Metrics{
@@ -92,7 +97,20 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 			logger.Error("Error occurred", zap.Error(err))
 			break
 		}
-		reader := bytes.NewReader(jsonBody)
+		/////
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		if _, err := gz.Write(jsonBody); err != nil {
+			logger.Error("Error occurred", zap.Error(err))
+			break
+		}
+		if err := gz.Close(); err != nil {
+			logger.Error("Error occurred", zap.Error(err))
+			break
+		}
+		//////
+
+		reader := bytes.NewReader(buf.Bytes())
 
 		request, err := http.NewRequest(http.MethodPost, serverAddress+"update", reader)
 		if err != nil {
@@ -100,6 +118,15 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 			break
 		}
 		request.Header.Add("Content-Type", "application/json")
+		request.Header.Add("Content-Encoding", "gzip")
+
+		if conf.SecretKey != "" {
+			h := hmac.New(sha256.New, []byte(conf.SecretKey))
+			h.Write(jsonBody)
+			hash := hex.EncodeToString(h.Sum(nil))
+			request.Header.Add("HashSHA256", hash)
+		}
+
 		response, err := client.Do(request)
 		if err != nil {
 			logger.Error("Error occurred", zap.Error(err))
@@ -109,5 +136,3 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string) {
 		defer response.Body.Close()
 	}
 }
-
-//iter13
