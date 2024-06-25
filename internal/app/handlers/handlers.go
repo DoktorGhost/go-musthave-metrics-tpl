@@ -192,6 +192,7 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 	}
 
 	if req.MType == "" {
+		log.Println("req.MType == \"\"")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -213,6 +214,7 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 			return
 		}
 	} else {
+		log.Println("MType unknown")
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
