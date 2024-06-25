@@ -255,7 +255,9 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	}
 
 	if req.MType == "" {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		//http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
