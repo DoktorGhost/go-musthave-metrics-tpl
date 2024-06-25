@@ -74,9 +74,7 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 		return
 	}
 	if typeMetric == "" || valueMetric == "" {
-		log.Println("req.MType == \"\", handlerPost")
 		res.WriteHeader(http.StatusBadRequest)
-		res.Write([]byte("req.MType == \"\", handlerPost"))
 		return
 	}
 	if typeMetric == "gauge" {
