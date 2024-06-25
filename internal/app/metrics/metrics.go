@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -96,7 +97,20 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string, conf 
 			logger.Error("Error occurred", zap.Error(err))
 			break
 		}
-		reader := bytes.NewReader(jsonBody)
+		/////
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		if _, err := gz.Write(jsonBody); err != nil {
+			logger.Error("Error occurred", zap.Error(err))
+			break
+		}
+		if err := gz.Close(); err != nil {
+			logger.Error("Error occurred", zap.Error(err))
+			break
+		}
+		//////
+
+		reader := bytes.NewReader(buf.Bytes())
 
 		request, err := http.NewRequest(http.MethodPost, serverAddress+"update", reader)
 		if err != nil {
@@ -104,6 +118,7 @@ func (m *Metrics) UpdateMetrics(client *http.Client, serverAddress string, conf 
 			break
 		}
 		request.Header.Add("Content-Type", "application/json")
+		request.Header.Add("Content-Encoding", "gzip")
 
 		if conf.SecretKey != "" {
 			h := hmac.New(sha256.New, []byte(conf.SecretKey))
