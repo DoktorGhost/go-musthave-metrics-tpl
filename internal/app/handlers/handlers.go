@@ -308,6 +308,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 		}
 	default:
 		log.Println("unknown metric type:", req.MType)
+		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
