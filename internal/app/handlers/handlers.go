@@ -74,12 +74,15 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 		return
 	}
 	if typeMetric == "" || valueMetric == "" {
+		log.Println("req.MType == \"\", handlerPost")
 		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte("req.MType == \"\", handlerPost"))
 		return
 	}
 	if typeMetric == "gauge" {
 		valueFloat, err := strconv.ParseFloat(valueMetric, 64)
 		if err != nil {
+			log.Println("ошибка конвертации gauge, handlerPost")
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write([]byte("ошибка конвертации"))
 			return
@@ -89,6 +92,7 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 	} else if typeMetric == "counter" {
 		valueInt, err := strconv.ParseInt(valueMetric, 10, 64)
 		if err != nil {
+			log.Println("ошибка конвертации counter, handlerPost")
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write([]byte("ошибка конвертации"))
 			return
@@ -97,7 +101,9 @@ func handlerPost(res http.ResponseWriter, req *http.Request, useCase usecase.Use
 		res.WriteHeader(http.StatusOK)
 		return
 	} else {
+		log.Println("unknown metric")
 		res.WriteHeader(http.StatusBadRequest)
+		return
 	}
 }
 
@@ -115,6 +121,7 @@ func handlerGet(res http.ResponseWriter, req *http.Request, useCase usecase.Usec
 		return
 	}
 	if typeMetric == "" {
+		log.Println("typeMetric nil")
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -216,6 +223,7 @@ func handlerJSONUpdate(w http.ResponseWriter, r *http.Request, useCase usecase.U
 	} else {
 		log.Println("MType unknown")
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -238,43 +246,71 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 	var res models.Metrics
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
-		log.Println("ошибка декодирования JSON")
-		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("ошибка декодирования JSON", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
 
 	if req.ID == "" {
-		w.WriteHeader(http.StatusNotFound)
+		http.Error(w, "Metric ID not found", http.StatusNotFound)
 		return
 	}
 
 	if req.MType == "" {
-		log.Println("req.MType == \"\"")
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
 	value := useCase.UsecaseRead(req.MType, req.ID)
 
 	if value == nil {
-		w.WriteHeader(http.StatusNotFound)
+		//w.WriteHeader(http.StatusNotFound)
+		http.Error(w, "Metric not found", http.StatusNotFound)
 		return
-	} else {
-		if req.MType == "gauge" {
-			res.ID = req.ID
-			res.MType = req.MType
-			vv := value.(float64)
+	}
+	/*
+		else {
+			if req.MType == "gauge" {
+				res.ID = req.ID
+				res.MType = req.MType
+				vv := value.(float64)
+				res.Value = &vv
+			} else if req.MType == "counter" {
+				res.ID = req.ID
+				res.MType = req.MType
+				vv := value.(int64)
+				res.Delta = &vv
+			} else {
+				log.Println("req.MType unknown")
+				w.WriteHeader(http.StatusBadRequest)
+			}
+		}
+
+	*/
+
+	res.ID = req.ID
+	res.MType = req.MType
+
+	switch req.MType {
+	case "gauge":
+		if vv, ok := value.(float64); ok {
 			res.Value = &vv
-		} else if req.MType == "counter" {
-			res.ID = req.ID
-			res.MType = req.MType
-			vv := value.(int64)
+		} else {
+			http.Error(w, "Invalid metric value", http.StatusInternalServerError)
+			return
+		}
+	case "counter":
+		if vv, ok := value.(int64); ok {
 			res.Delta = &vv
 		} else {
-			log.Println("req.MType unknown")
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Invalid metric value", http.StatusInternalServerError)
+			return
 		}
+	default:
+		log.Println("unknown metric type:", req.MType)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -282,7 +318,7 @@ func handlerJSONValue(w http.ResponseWriter, r *http.Request, useCase usecase.Us
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(res); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 }
@@ -334,6 +370,7 @@ func handlerUpdates(w http.ResponseWriter, r *http.Request, useCase usecase.Usec
 		}
 
 		if m.MType == "" {
+			log.Println("req.MType nil")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -355,7 +392,9 @@ func handlerUpdates(w http.ResponseWriter, r *http.Request, useCase usecase.Usec
 				return
 			}
 		} else {
+			log.Println("req.MType unknown")
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
 		responses = append(responses, res)
